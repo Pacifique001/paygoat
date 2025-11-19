@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: paygoat-backend
+    ports:
+      - "3000:3000"
+    networks:
+      - paygoat-net
+
+  frontend:
+    build: ./frontend
+    container_name: paygoat-frontend
+    networks:
+      - paygoat-net
+
+  nginx:
+    image: nginx:latest
+    container_name: paygoat-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - paygoat-net
+
+networks:
+  paygoat-net:
+    driver: bridge
