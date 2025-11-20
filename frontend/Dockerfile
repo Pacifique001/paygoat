@@ -1,32 +1,14 @@
-# Use an official Node.js runtime as a parent image
-FROM node:20-alpine
-
-# Create a non-root user and group
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-# Set the working directory in the container
+# build stage
+FROM node:20-alpine AS build
 WORKDIR /usr/src/app
-
-# Copy package.json and package-lock.json (if available)
-COPY package.json ./
-
-# Install app dependencies
-RUN npm install
-
-# Copy the rest of the application source code
+COPY package*.json ./
+RUN npm ci
 COPY . .
-
-# Build the React application
 RUN npm run build
 
-# Change the owner of the directory to the non-root user
-RUN chown -R appuser:appgroup /usr/src/app
-
-# Switch to the non-root user
-USER appuser
-
-# Expose the port the app runs on
-EXPOSE 8000
-
-# Serve the built application
-CMD ["npm", "start"]
+# production stage (nginx)
+FROM nginx:stable-alpine
+COPY --from=build /usr/src/app/dist /usr/share/nginx/html
+# optional: copy custom nginx.conf if you need proxy rules (see nginx below)
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
